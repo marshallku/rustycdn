@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+    cdn:
+        container_name: cdn
+        build: .
+        restart: unless-stopped
+        volumes:
+            - ./cdn_root:/app/cdn_root
+        ports:
+            - 4200:41890
+        networks:
+            - app_network
+
+networks:
+    app_network:
+        external: true
