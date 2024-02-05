@@ -1,0 +1,35 @@
+{
+    "words": [
+        "actix",
+        "addrs",
+        "autodocs",
+        "BUILDKIT",
+        "callout",
+        "codebases",
+        "codepoint",
+        "codepoints",
+        "hookform",
+        "libressl",
+        "localforage",
+        "Malgun",
+        "marshallku",
+        "nextjs",
+        "pkgconfig",
+        "preconfigured",
+        "preconfigures",
+        "Pretendard",
+        "Promiseable",
+        "referer",
+        "reqwest",
+        "treeshake",
+        "tsup",
+        "Turborepo",
+        "vercel",
+        "xlink"
+    ],
+    "ignorePaths": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "target"
+    ]
+}
