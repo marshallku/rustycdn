@@ -6,12 +6,40 @@ use axum::{
     routing::get,
     Router,
 };
-use std::env;
+use reqwest::Client;
+use std::{env, fs, path::PathBuf};
+use tokio;
+use tokio_util::io::ReaderStream;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{info, Level, Span};
 
+async fn fetch_and_cache(file_path: &PathBuf, path: &str) -> Result<(), reqwest::Error> {
+    let url = format!("https://marshallku.com/{}", path);
+    let response = Client::new().get(&url).send().await?.bytes().await?;
+    if let Some(parent) = file_path.parent() {
+        fs::create_dir_all(parent).ok();
+    }
+    fs::write(file_path, &response).ok();
+    Ok(())
+}
+
 async fn handle_files_request(Path(path): Path<String>) -> impl IntoResponse {
-    (StatusCode::OK, format!("Hello {}!", path))
+    let file_path = PathBuf::from(format!("cdn_root/files/{}", path));
+
+    if !file_path.exists() {
+        if let Err(_) = fetch_and_cache(&file_path, &path).await {
+            return StatusCode::NOT_FOUND.into_response();
+        }
+    }
+
+    let file = match tokio::fs::File::open(file_path).await {
+        Ok(file) => file,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    let stream = ReaderStream::new(file);
+    let body = Body::from_stream(stream);
+
+    body.into_response()
 }
 
 async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
