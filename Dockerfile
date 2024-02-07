@@ -9,4 +9,4 @@ RUN pip install gunicorn
 
 EXPOSE 41890
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:41890", "app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:41890", "app:app"]
