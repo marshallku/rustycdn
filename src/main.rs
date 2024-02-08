@@ -11,7 +11,7 @@ use std::{env, fs, path::PathBuf};
 use tokio;
 use tokio_util::io::ReaderStream;
 use tower_http::trace::{self, TraceLayer};
-use tracing::{info, Level, Span};
+use tracing::{error, info, Level, Span};
 
 async fn fetch_and_cache(file_path: &PathBuf, path: &str) -> Result<(), reqwest::Error> {
     let url = format!("https://marshallku.com/{}", path);
@@ -43,7 +43,68 @@ async fn handle_files_request(Path(path): Path<String>) -> impl IntoResponse {
 }
 
 async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
-    (StatusCode::OK, format!("Hello {}!", path))
+    let file_path = PathBuf::from(format!("cdn_root/images/{}", path));
+
+    if file_path.exists() {
+        error!("File exists but respond with Rust: {:?}", file_path);
+        let file = match tokio::fs::File::open(file_path).await {
+            Ok(file) => file,
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        };
+        let stream = ReaderStream::new(file);
+        let body = Body::from_stream(stream);
+
+        return body.into_response();
+    }
+
+    let extension = file_path.extension().and_then(|s| s.to_str()).unwrap_or("");
+    let original_path = path.split('.').next().unwrap().to_string() + "." + extension;
+    let original_file_path = PathBuf::from(format!("cdn_root/images/{}", original_path));
+
+    if !original_file_path.exists() {
+        if let Err(_) = fetch_and_cache(&original_file_path, &original_path).await {
+            return StatusCode::NOT_FOUND.into_response();
+        }
+    }
+
+    let resize_width = path
+        .split('.')
+        .find(|s| s.starts_with("w"))
+        .and_then(|s| s.strip_prefix("w"))
+        .and_then(|s| s.parse::<u32>().ok());
+
+    if resize_width.is_none() {
+        let file = match tokio::fs::File::open(file_path).await {
+            Ok(file) => file,
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        };
+        let stream = ReaderStream::new(file);
+        let body = Body::from_stream(stream);
+
+        return body.into_response();
+    }
+
+    let image = match image::open(&original_file_path) {
+        Ok(image) => image,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+
+    let resize_height = resize_width.unwrap() * image.height() / image.width();
+    let resized_image = image.thumbnail(resize_width.unwrap(), resize_height);
+
+    match resized_image.save(file_path.clone()) {
+        Ok(_) => {
+            let file = match tokio::fs::File::open(file_path).await {
+                Ok(file) => file,
+                Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            };
+            let stream = ReaderStream::new(file);
+            let body = Body::from_stream(stream);
+
+            body.into_response()
+        }
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
 }
 
 fn trace_layer_on_request(request: &Request<Body>, _span: &Span) {
