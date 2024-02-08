@@ -1,0 +1,31 @@
+name: CI / Push
+
+on:
+    - push
+
+env:
+    CI: true
+
+jobs:
+    check-spelling:
+        name: Check spelling
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: marshallku/actions/check-spelling@master
+    build:
+        name: Build project
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions-rust-lang/setup-rust-toolchain@v1
+            - run: cargo build
+    send-notification:
+        needs: [check-spelling, build]
+        if: ${{ failure() }}
+        uses: marshallku/actions/.github/workflows/send-notification.yml@master
+        with:
+            failed: ${{ contains(join(needs.*.result, ','), 'failure') }}
+            message: "CI job failed - push"
+        secrets:
+            url: ${{ secrets.DISCORD_WEBHOOK_URI }}
