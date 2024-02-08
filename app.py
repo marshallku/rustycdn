@@ -71,10 +71,10 @@ def serve_image(filename):
             w_percent = (int(width)/float(img.size[0]))
             h_size = int((float(img.size[1])*float(w_percent)))
             img = img.resize((int(width), h_size), Image.ANTIALIAS)
-            img.save(file_path, mimetype.split('/')[1], quality=90)
+            img.save(file_path, mimetype.split('/')[1], quality=100)
             return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path), mimetype=mimetype)
         if convert_to_webp:
-            img.save(file_path, 'WEBP', quality=90)
+            img.save(file_path, 'WEBP', quality=100)
             return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path), mimetype='image/webp')
 
     return send_from_directory(os.path.dirname(original_file_path), os.path.basename(original_file_path))
