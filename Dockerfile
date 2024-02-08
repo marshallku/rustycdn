@@ -1,18 +1,31 @@
-FROM python:3.10-slim as base
+FROM rust:1.73-alpine AS chef
 
-WORKDIR /app
+WORKDIR /usr/src/marshallku-blog-cdn
 
-RUN apt-get update && apt-get install -y magic libmagic-dev
+RUN set -eux; \
+    apk add --no-cache musl-dev pkgconfig libressl-dev; \
+    cargo install cargo-chef; \
+    rm -rf $CARGO_HOME/registry
 
-COPY requirements.txt /app/requirements.txt
+FROM chef as planner
 
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install gunicorn
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-FROM base as runner
+FROM chef AS builder
 
-COPY ./app.py /app/app.py
+COPY --from=planner /usr/src/marshallku-blog-cdn/recipe.json .
+RUN cargo chef cook --release --recipe-path recipe.json
 
-EXPOSE 41890
+COPY . .
+RUN cargo build --release
 
-CMD ["gunicorn", "-b", "0.0.0.0:41890", "app:app"]
+FROM alpine:3.14
+
+WORKDIR /usr/local/bin
+
+COPY --from=builder /usr/src/marshallku-blog-cdn/target/release/marshallku-blog-cdn .
+
+EXPOSE 41880
+
+CMD ["./marshallku-blog-cdn"]
