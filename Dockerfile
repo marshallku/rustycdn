@@ -15,6 +15,6 @@ WORKDIR /usr/local/bin
 
 COPY --from=builder /usr/src/marshallku-blog-cdn/target/release/marshallku-blog-cdn .
 
-EXPOSE 41880
+EXPOSE 41890
 
 CMD ["./marshallku-blog-cdn"]
