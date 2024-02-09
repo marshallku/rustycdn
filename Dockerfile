@@ -1,21 +1,10 @@
-FROM rust:1.73-alpine AS chef
+FROM rust:1.73-alpine AS builder
 
 WORKDIR /usr/src/marshallku-blog-cdn
 
 RUN set -eux; \
     apk add --no-cache musl-dev pkgconfig libressl-dev; \
-    cargo install cargo-chef; \
     rm -rf $CARGO_HOME/registry
-
-FROM chef as planner
-
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-FROM chef AS builder
-
-COPY --from=planner /usr/src/marshallku-blog-cdn/recipe.json .
-RUN cargo chef cook --release --recipe-path recipe.json
 
 COPY . .
 RUN cargo build --release
