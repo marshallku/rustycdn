@@ -20,8 +20,15 @@ jobs:
             - uses: actions/checkout@v4
             - uses: actions-rust-lang/setup-rust-toolchain@v1
             - run: cargo build
+    test:
+        name: Test project
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions-rust-lang/setup-rust-toolchain@v1
+            - run: cargo test
     send-notification:
-        needs: [check-spelling, build]
+        needs: [check-spelling, build, test]
         if: ${{ failure() }}
         uses: marshallku/actions/.github/workflows/send-notification.yml@master
         with:
