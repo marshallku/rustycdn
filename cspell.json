@@ -21,6 +21,7 @@
         "Promiseable",
         "referer",
         "reqwest",
+        "rfind",
         "treeshake",
         "tsup",
         "Turborepo",
