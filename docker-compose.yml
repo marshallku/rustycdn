@@ -11,6 +11,8 @@ services:
             - 4200:41890
         networks:
             - app_network
+        environment:
+            - BIND_ADDRESS=0.0.0.0
 
 networks:
     app_network:
