@@ -27,9 +27,5 @@
         "vercel",
         "xlink"
     ],
-    "ignorePaths": [
-        "Cargo.lock",
-        "Cargo.toml",
-        "target"
-    ]
+    "ignorePaths": ["Cargo.lock", "Cargo.toml", "target", "config/nginx.conf"]
 }
