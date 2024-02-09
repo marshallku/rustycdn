@@ -1,3 +1,5 @@
+mod utils;
+
 use axum::{
     body::Body,
     extract::{Path, Request},
@@ -57,20 +59,8 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
         return body.into_response();
     }
 
-    let resize_width = path
-        .split('.')
-        .find(|s| s.starts_with("w"))
-        .and_then(|s| s.strip_prefix("w"))
-        .and_then(|s| s.parse::<u32>().ok());
-
-    let extension = file_path.extension().and_then(|s| s.to_str()).unwrap_or("");
-    let original_path = if resize_width.is_none() {
-        path.clone()
-    } else {
-        path.split('.').collect::<Vec<&str>>()[..path.split('.').count() - 2].join(".")
-            + "."
-            + extension
-    };
+    let resize_width = utils::get_resize_width_from_path(&path);
+    let original_path = utils::get_original_path(&path, resize_width.is_some());
     let original_file_path = PathBuf::from(format!("cdn_root/images/{}", original_path));
 
     if !original_file_path.exists() {
