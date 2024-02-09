@@ -1,1 +1,8 @@
 .github
+/config
+Dockerfile
+docker-compose.yml
+*.md
+cspell.json
+.gitignore
+cdn_root
