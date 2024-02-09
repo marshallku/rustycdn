@@ -42,21 +42,25 @@ mod tests {
 
     #[test]
     fn test_get_original_path() {
-        assert_eq!(
-            get_original_path("/path/to/file.w100.jpg", true),
-            "/path/to/file.jpg"
-        );
-        assert_eq!(
-            get_original_path("/path/to/file.with.dot.w100.jpg", true),
-            "/path/to/file.with.dot.jpg"
-        );
-        assert_eq!(
-            get_original_path("/path/to/file.jpg", false),
-            "/path/to/file.jpg"
-        );
-        assert_eq!(
-            get_original_path("/path/to/file.with.dot.jpg", false),
-            "/path/to/file.with.dot.jpg"
-        );
+        let paths = vec![
+            "/path/to/file.w100.jpg",
+            "/path/to/file.with.dot.w100.jpg",
+            "/path/to/file.jpg",
+            "/path/to/file.with.dot.jpg",
+        ];
+
+        let expected = vec![
+            "/path/to/file.jpg",
+            "/path/to/file.with.dot.jpg",
+            "/path/to/file.jpg",
+            "/path/to/file.with.dot.jpg",
+        ];
+
+        for (i, path) in paths.iter().enumerate() {
+            assert_eq!(
+                get_original_path(path, get_resize_width_from_path(path).is_some()),
+                expected[i]
+            );
+        }
     }
 }
