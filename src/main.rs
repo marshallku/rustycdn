@@ -57,8 +57,20 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
         return body.into_response();
     }
 
+    let resize_width = path
+        .split('.')
+        .find(|s| s.starts_with("w"))
+        .and_then(|s| s.strip_prefix("w"))
+        .and_then(|s| s.parse::<u32>().ok());
+
     let extension = file_path.extension().and_then(|s| s.to_str()).unwrap_or("");
-    let original_path = path.split('.').next().unwrap().to_string() + "." + extension;
+    let original_path = if resize_width.is_none() {
+        path.clone()
+    } else {
+        path.split('.').collect::<Vec<&str>>()[..path.split('.').count() - 2].join(".")
+            + "."
+            + extension
+    };
     let original_file_path = PathBuf::from(format!("cdn_root/images/{}", original_path));
 
     if !original_file_path.exists() {
@@ -66,12 +78,6 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
             return StatusCode::NOT_FOUND.into_response();
         }
     }
-
-    let resize_width = path
-        .split('.')
-        .find(|s| s.starts_with("w"))
-        .and_then(|s| s.strip_prefix("w"))
-        .and_then(|s| s.parse::<u32>().ok());
 
     if resize_width.is_none() {
         let file = match tokio::fs::File::open(file_path).await {
