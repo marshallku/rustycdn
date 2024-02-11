@@ -6,7 +6,7 @@ services:
         build: .
         restart: unless-stopped
         volumes:
-            - ./cdn_root:/app/cdn_root
+            - ./cdn_root:/usr/local/bin/cdn_root
         ports:
             - 4200:41890
         networks:
