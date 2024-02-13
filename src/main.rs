@@ -4,7 +4,7 @@ use axum::{
     body::Body,
     extract::{Path, Request},
     http::StatusCode,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     routing::get,
     Router,
 };
@@ -14,6 +14,17 @@ use tokio;
 use tokio_util::io::ReaderStream;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{error, info, Level, Span};
+
+async fn response_file(file_path: &PathBuf) -> Response {
+    let file = match tokio::fs::File::open(file_path).await {
+        Ok(file) => file,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    let stream = ReaderStream::new(file);
+    let body = Body::from_stream(stream);
+
+    body.into_response()
+}
 
 async fn fetch_and_cache(file_path: &PathBuf, path: &str) -> Result<(), reqwest::Error> {
     let url = format!("https://marshallku.com/{}", path);
@@ -49,14 +60,7 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
 
     if file_path.exists() {
         error!("File exists but respond with Rust: {:?}", file_path);
-        let file = match tokio::fs::File::open(file_path).await {
-            Ok(file) => file,
-            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        };
-        let stream = ReaderStream::new(file);
-        let body = Body::from_stream(stream);
-
-        return body.into_response();
+        return response_file(&file_path).await;
     }
 
     let resize_width = utils::get_resize_width_from_path(&path);
@@ -70,14 +74,7 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
     }
 
     if resize_width.is_none() {
-        let file = match tokio::fs::File::open(file_path).await {
-            Ok(file) => file,
-            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        };
-        let stream = ReaderStream::new(file);
-        let body = Body::from_stream(stream);
-
-        return body.into_response();
+        return response_file(&file_path).await;
     }
 
     let image = match image::open(&original_file_path) {
@@ -87,15 +84,7 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
 
     if image.width() <= resize_width.unwrap() {
         fs::copy(&original_file_path, &file_path).ok();
-
-        let file = match tokio::fs::File::open(file_path).await {
-            Ok(file) => file,
-            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        };
-        let stream = ReaderStream::new(file);
-        let body = Body::from_stream(stream);
-
-        return body.into_response();
+        return response_file(&file_path).await;
     }
 
     let resize_height = resize_width.unwrap() * image.height() / image.width();
@@ -103,14 +92,7 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
 
     match resized_image.save(file_path.clone()) {
         Ok(_) => {
-            let file = match tokio::fs::File::open(file_path).await {
-                Ok(file) => file,
-                Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-            };
-            let stream = ReaderStream::new(file);
-            let body = Body::from_stream(stream);
-
-            body.into_response()
+            return response_file(&file_path).await;
         }
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
