@@ -85,6 +85,19 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
 
+    if image.width() <= resize_width.unwrap() {
+        fs::copy(&original_file_path, &file_path).ok();
+
+        let file = match tokio::fs::File::open(file_path).await {
+            Ok(file) => file,
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        };
+        let stream = ReaderStream::new(file);
+        let body = Body::from_stream(stream);
+
+        return body.into_response();
+    }
+
     let resize_height = resize_width.unwrap() * image.height() / image.width();
     let resized_image = image.thumbnail(resize_width.unwrap(), resize_height);
 
