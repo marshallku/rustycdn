@@ -1,9 +1,8 @@
 pub fn get_resize_width_from_path(path: &str) -> Option<u32> {
-    return path
-        .split('.')
+    path.split('.')
         .rfind(|s| s.starts_with("w"))
         .and_then(|s| s.strip_prefix("w"))
-        .and_then(|s| s.parse::<u32>().ok());
+        .and_then(|s| s.parse::<u32>().ok())
 }
 
 pub fn get_original_path(path: &str, has_resize: bool) -> String {
@@ -16,7 +15,7 @@ pub fn get_original_path(path: &str, has_resize: bool) -> String {
         path.to_string()
     };
 
-    return original_path;
+    original_path
 }
 
 #[cfg(test)]

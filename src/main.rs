@@ -165,8 +165,10 @@ async fn main() {
     let bind_address = env::var("BIND_ADDRESS").unwrap_or_else(|_| String::from("127.0.0.1"));
     let addr = format!("{}:41890", bind_address);
     let listener = tokio::net::TcpListener::bind(addr.as_str()).await.unwrap();
+
     info!("Server running at http://{}", addr);
+
     axum::serve(listener, app.into_make_service())
         .await
-        .unwrap();
+        .unwrap()
 }
