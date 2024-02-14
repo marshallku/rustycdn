@@ -43,10 +43,24 @@ async fn response_file(file_path: &PathBuf) -> Response {
 
 async fn fetch_and_cache(file_path: &PathBuf, path: &str) -> Result<(), reqwest::Error> {
     let url = format!("https://marshallku.com/{}", path);
-    let response = Client::new().get(&url).send().await?.bytes().await?;
+    let response = match Client::new().get(&url).send().await {
+        Ok(response) => {
+            if response.status() != reqwest::StatusCode::OK {
+                error!("Failed to fetch {}: {:?}", url, response.status());
+                return Err(response.error_for_status().unwrap_err());
+            }
+            response.bytes().await.unwrap()
+        }
+        Err(err) => {
+            error!("Failed to fetch {}: {:?}", url, err);
+            return Err(err);
+        }
+    };
+
     if let Some(parent) = file_path.parent() {
         fs::create_dir_all(parent).ok();
     }
+
     fs::write(file_path, &response).ok();
     Ok(())
 }
