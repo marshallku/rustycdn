@@ -94,5 +94,5 @@ jobs:
               with:
                   context: .
                   push: true
-                  tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.check-version.outputs.version }}
+                  tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.check-version.outputs.version }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
                   labels: ${{ steps.meta.outputs.labels }}
