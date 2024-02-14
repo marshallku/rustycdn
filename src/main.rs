@@ -19,7 +19,14 @@ fn get_headers_without_cache() -> HeaderMap {
     let mut headers = HeaderMap::new();
 
     headers.insert("Cache-Control", "no-cache".parse().unwrap());
-    headers.insert("Expires", "0".parse().unwrap());
+
+    headers
+}
+
+fn get_headers_with_cache() -> HeaderMap {
+    let mut headers = HeaderMap::new();
+
+    headers.insert("Cache-Control", "public, max-age=31536000".parse().unwrap());
 
     headers
 }
@@ -38,7 +45,7 @@ async fn response_file(file_path: &PathBuf) -> Response {
     let stream = ReaderStream::new(file);
     let body = Body::from_stream(stream);
 
-    body.into_response()
+    (get_headers_with_cache(), body).into_response()
 }
 
 async fn fetch_and_cache(file_path: &PathBuf, path: &str) -> Result<(), reqwest::Error> {
@@ -75,7 +82,7 @@ async fn handle_files_request(Path(path): Path<String>) -> impl IntoResponse {
     let stream = ReaderStream::new(file);
     let body = Body::from_stream(stream);
 
-    body.into_response()
+    (get_headers_with_cache(), body).into_response()
 }
 
 async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
