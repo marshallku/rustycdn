@@ -3,7 +3,7 @@ mod utils;
 use axum::{
     body::Body,
     extract::{Path, Request},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::get,
     Router,
@@ -15,10 +15,25 @@ use tokio_util::io::ReaderStream;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{error, info, Level, Span};
 
+fn get_headers_without_cache() -> HeaderMap {
+    let mut headers = HeaderMap::new();
+
+    headers.insert("Cache-Control", "no-cache".parse().unwrap());
+    headers.insert("Expires", "0".parse().unwrap());
+
+    headers
+}
+
 async fn response_file(file_path: &PathBuf) -> Response {
     let file = match tokio::fs::File::open(file_path).await {
         Ok(file) => file,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                get_headers_without_cache(),
+            )
+                .into_response();
+        }
     };
     let stream = ReaderStream::new(file);
     let body = Body::from_stream(stream);
@@ -41,7 +56,7 @@ async fn handle_files_request(Path(path): Path<String>) -> impl IntoResponse {
 
     if !file_path.exists() {
         if let Err(_) = fetch_and_cache(&file_path, &path).await {
-            return StatusCode::NOT_FOUND.into_response();
+            return (StatusCode::NOT_FOUND, get_headers_without_cache()).into_response();
         }
     }
 
@@ -69,7 +84,7 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
 
     if !original_file_path.exists() {
         if let Err(_) = fetch_and_cache(&original_file_path, &original_path).await {
-            return StatusCode::NOT_FOUND.into_response();
+            return (StatusCode::NOT_FOUND, get_headers_without_cache()).into_response();
         }
     }
 
@@ -79,7 +94,13 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
 
     let image = match image::open(&original_file_path) {
         Ok(image) => image,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                get_headers_without_cache(),
+            )
+                .into_response();
+        }
     };
 
     if image.width() <= resize_width.unwrap() {
@@ -94,7 +115,13 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
         Ok(_) => {
             return response_file(&file_path).await;
         }
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                get_headers_without_cache(),
+            )
+                .into_response();
+        }
     }
 }
 
