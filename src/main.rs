@@ -43,16 +43,10 @@ async fn response_file(file_path: &PathBuf) -> Response {
 
 async fn fetch_and_cache(file_path: &PathBuf, path: &str) -> Result<(), reqwest::Error> {
     let url = format!("https://marshallku.com/{}", path);
-    let response = match Client::new().get(&url).send().await {
-        Ok(response) => {
-            if response.status() != reqwest::StatusCode::OK {
-                error!("Failed to fetch {}: {:?}", url, response.status());
-                return Err(response.error_for_status().unwrap_err());
-            }
-            response.bytes().await.unwrap()
-        }
+    let response = match Client::new().get(&url).send().await?.error_for_status() {
+        Ok(response) => response.bytes().await?,
         Err(err) => {
-            error!("Failed to fetch {}: {:?}", url, err);
+            error!("Failed to fetch {}", url);
             return Err(err);
         }
     };
