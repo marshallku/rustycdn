@@ -1,19 +1,39 @@
+mod env;
 mod utils;
 
 use axum::{
     body::Body,
-    extract::{Path, Request},
+    extract::{Path, Request, State},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::get,
     Router,
 };
 use reqwest::Client;
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 use tokio;
 use tokio_util::io::ReaderStream;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{error, info, Level, Span};
+
+#[derive(Clone)]
+pub struct AppState {
+    host: String,
+    port: u16,
+    address: String,
+}
+
+impl AppState {
+    pub fn from_env() -> Self {
+        let env = env::Env::new();
+
+        Self {
+            host: env.host.into_owned(),
+            port: env.port,
+            address: env.address.into_owned(),
+        }
+    }
+}
 
 fn get_headers_without_cache() -> HeaderMap {
     let mut headers = HeaderMap::new();
@@ -48,8 +68,12 @@ async fn response_file(file_path: &PathBuf) -> Response {
     (get_headers_with_cache(), body).into_response()
 }
 
-async fn fetch_and_cache(file_path: &PathBuf, path: &str) -> Result<(), reqwest::Error> {
-    let url = format!("https://marshallku.com/{}", path);
+async fn fetch_and_cache(
+    host: String,
+    file_path: &PathBuf,
+    path: &str,
+) -> Result<(), reqwest::Error> {
+    let url = format!("{}{}", host, path);
     let response = match Client::new().get(&url).send().await?.error_for_status() {
         Ok(response) => response.bytes().await?,
         Err(err) => {
@@ -66,11 +90,14 @@ async fn fetch_and_cache(file_path: &PathBuf, path: &str) -> Result<(), reqwest:
     Ok(())
 }
 
-async fn handle_files_request(Path(path): Path<String>) -> impl IntoResponse {
+async fn handle_files_request(
+    State(state): State<AppState>,
+    Path(path): Path<String>,
+) -> impl IntoResponse {
     let file_path = PathBuf::from(format!("cdn_root/files/{}", path));
 
     if !file_path.exists() {
-        if let Err(_) = fetch_and_cache(&file_path, &path).await {
+        if let Err(_) = fetch_and_cache(state.host, &file_path, &path).await {
             return (StatusCode::NOT_FOUND, get_headers_without_cache()).into_response();
         }
     }
@@ -85,7 +112,10 @@ async fn handle_files_request(Path(path): Path<String>) -> impl IntoResponse {
     (get_headers_with_cache(), body).into_response()
 }
 
-async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
+async fn handle_image_request(
+    State(state): State<AppState>,
+    Path(path): Path<String>,
+) -> impl IntoResponse {
     let file_path = PathBuf::from(format!("cdn_root/images/{}", path));
 
     if file_path.exists() {
@@ -98,7 +128,7 @@ async fn handle_image_request(Path(path): Path<String>) -> impl IntoResponse {
     let original_file_path = PathBuf::from(format!("cdn_root/images/{}", original_path));
 
     if !original_file_path.exists() {
-        if let Err(_) = fetch_and_cache(&original_file_path, &original_path).await {
+        if let Err(_) = fetch_and_cache(state.host, &original_file_path, &original_path).await {
             return (StatusCode::NOT_FOUND, get_headers_without_cache()).into_response();
         }
     }
@@ -176,6 +206,8 @@ async fn main() {
         .compact()
         .init();
 
+    let state = AppState::from_env();
+    let addr = format!("{}:{}", state.address.to_string(), state.port.to_string());
     let app = Router::new()
         .route("/files/*path", get(handle_files_request))
         .route("/images/*path", get(handle_image_request))
@@ -184,10 +216,9 @@ async fn main() {
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO))
                 .on_request(trace_layer_on_request),
-        );
+        )
+        .with_state(state);
 
-    let bind_address = env::var("BIND_ADDRESS").unwrap_or_else(|_| String::from("127.0.0.1"));
-    let addr = format!("{}:41890", bind_address);
     let listener = tokio::net::TcpListener::bind(addr.as_str()).await.unwrap();
 
     info!("Server running at http://{}", addr);
