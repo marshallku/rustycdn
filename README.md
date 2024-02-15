@@ -28,7 +28,9 @@ After starting the server, it will listen for requests on the configured address
 
 ## Configuration
 
-- `BIND_ADDRESS`: Sets the IP address and port the server listens on (default: `127.0.0.1:41890`).
+- `BIND_ADDRESS`: Sets the IP address the server listens on (default: `127.0.0.1`).
+- `PORT`: Sets the port the server listens on (default: `41890`).
+- `HOST`: Sets the host server that original files exist (default: `http://localhost/`).
 
 ## Production Deployment with Nginx
 
