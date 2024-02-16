@@ -32,6 +32,18 @@ mod tests {
             get_resize_width_from_path("/path/to/file.with.dot.w200.jpg"),
             Some(200)
         );
+        assert_eq!(
+            get_resize_width_from_path("/path/to/file.with.dot.w200w.jpg"),
+            None
+        );
+        assert_eq!(
+            get_resize_width_from_path("/path/to/file.with.dot.w300.jpg.webp"),
+            Some(300)
+        );
+        assert_eq!(
+            get_resize_width_from_path("/path/to/file.with.dot.300.jpg.webp"),
+            None
+        );
         assert_eq!(get_resize_width_from_path("/path/to/file.jpg"), None);
         assert_eq!(
             get_resize_width_from_path("/path/to/file.with.dot.jpg"),
