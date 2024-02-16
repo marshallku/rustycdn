@@ -1,5 +1,5 @@
 mod env;
-mod utils;
+mod path;
 
 use axum::{
     body::Body,
@@ -123,8 +123,8 @@ async fn handle_image_request(
         return response_file(&file_path).await;
     }
 
-    let resize_width = utils::get_resize_width_from_path(&path);
-    let original_path = utils::get_original_path(&path, resize_width.is_some());
+    let resize_width = path::get_resize_width_from_path(&path);
+    let original_path = path::get_original_path(&path, resize_width.is_some());
     let original_file_path = PathBuf::from(format!("cdn_root/images/{}", original_path));
 
     if !original_file_path.exists() {
