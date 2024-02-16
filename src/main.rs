@@ -1,11 +1,12 @@
 mod env;
+mod http;
 mod path;
 
 use axum::{
     body::Body,
     extract::{Path, Request, State},
-    http::{HeaderMap, StatusCode},
-    response::{IntoResponse, Response},
+    http::StatusCode,
+    response::IntoResponse,
     routing::get,
     Router,
 };
@@ -33,39 +34,6 @@ impl AppState {
             address: env.address.into_owned(),
         }
     }
-}
-
-fn get_headers_without_cache() -> HeaderMap {
-    let mut headers = HeaderMap::new();
-
-    headers.insert("Cache-Control", "no-cache".parse().unwrap());
-
-    headers
-}
-
-fn get_headers_with_cache() -> HeaderMap {
-    let mut headers = HeaderMap::new();
-
-    headers.insert("Cache-Control", "public, max-age=31536000".parse().unwrap());
-
-    headers
-}
-
-async fn response_file(file_path: &PathBuf) -> Response {
-    let file = match tokio::fs::File::open(file_path).await {
-        Ok(file) => file,
-        Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                get_headers_without_cache(),
-            )
-                .into_response();
-        }
-    };
-    let stream = ReaderStream::new(file);
-    let body = Body::from_stream(stream);
-
-    (get_headers_with_cache(), body).into_response()
 }
 
 async fn fetch_and_cache(
@@ -98,7 +66,7 @@ async fn handle_files_request(
 
     if !file_path.exists() {
         if let Err(_) = fetch_and_cache(state.host, &file_path, &path).await {
-            return (StatusCode::NOT_FOUND, get_headers_without_cache()).into_response();
+            return (StatusCode::NOT_FOUND, http::get_headers_without_cache()).into_response();
         }
     }
 
@@ -109,7 +77,7 @@ async fn handle_files_request(
     let stream = ReaderStream::new(file);
     let body = Body::from_stream(stream);
 
-    (get_headers_with_cache(), body).into_response()
+    (http::get_headers_with_cache(), body).into_response()
 }
 
 async fn handle_image_request(
@@ -120,7 +88,7 @@ async fn handle_image_request(
 
     if file_path.exists() {
         error!("File exists but respond with Rust: {:?}", file_path);
-        return response_file(&file_path).await;
+        return http::response_file(&file_path).await;
     }
 
     let resize_width = path::get_resize_width_from_path(&path);
@@ -129,12 +97,12 @@ async fn handle_image_request(
 
     if !original_file_path.exists() {
         if let Err(_) = fetch_and_cache(state.host, &original_file_path, &original_path).await {
-            return (StatusCode::NOT_FOUND, get_headers_without_cache()).into_response();
+            return (StatusCode::NOT_FOUND, http::get_headers_without_cache()).into_response();
         }
     }
 
     if resize_width.is_none() {
-        return response_file(&file_path).await;
+        return http::response_file(&file_path).await;
     }
 
     let image = match image::open(&original_file_path) {
@@ -142,7 +110,7 @@ async fn handle_image_request(
         Err(_) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                get_headers_without_cache(),
+                http::get_headers_without_cache(),
             )
                 .into_response();
         }
@@ -150,7 +118,7 @@ async fn handle_image_request(
 
     if image.width() <= resize_width.unwrap() {
         fs::copy(&original_file_path, &file_path).ok();
-        return response_file(&file_path).await;
+        return http::response_file(&file_path).await;
     }
 
     let resize_height = resize_width.unwrap() * image.height() / image.width();
@@ -158,12 +126,12 @@ async fn handle_image_request(
 
     match resized_image.save(file_path.clone()) {
         Ok(_) => {
-            return response_file(&file_path).await;
+            return http::response_file(&file_path).await;
         }
         Err(_) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                get_headers_without_cache(),
+                http::get_headers_without_cache(),
             )
                 .into_response();
         }
