@@ -12,7 +12,7 @@ use axum::{
     routing::get,
     Router,
 };
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 use tokio;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{error, info, Level};
@@ -107,40 +107,16 @@ async fn handle_image_request(
             }
         };
 
-        if image_webp.width() <= resize_width.unwrap() {
-            fs::copy(&original_file_path_with_webp, &file_path).ok();
-            return http::response_file(&file_path).await;
-        }
-
-        let resize_height = resize_width.unwrap() * image_webp.height() / image_webp.width();
-        let resized_image_webp = image_webp.thumbnail(resize_width.unwrap(), resize_height);
-
-        match resized_image_webp.save(file_path.clone()) {
-            Ok(_) => {
-                return http::response_file(&file_path).await;
-            }
-            Err(_) => {
-                return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        }
+        return img::save_resized_image(
+            image_webp,
+            resize_width,
+            &original_file_path_with_webp,
+            &file_path,
+        )
+        .await;
     }
 
-    if image.width() <= resize_width.unwrap() {
-        fs::copy(&original_file_path, &file_path).ok();
-        return http::response_file(&file_path).await;
-    }
-
-    let resize_height = resize_width.unwrap() * image.height() / image.width();
-    let resized_image = image.thumbnail(resize_width.unwrap(), resize_height);
-
-    match resized_image.save(file_path.clone()) {
-        Ok(_) => {
-            return http::response_file(&file_path).await;
-        }
-        Err(_) => {
-            return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    }
+    img::save_resized_image(image, resize_width, &original_file_path, &file_path).await
 }
 
 #[tokio::main]

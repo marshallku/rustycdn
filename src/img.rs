@@ -1,5 +1,11 @@
-use std::{fs::write, path::PathBuf};
+use axum::{http::StatusCode, response::Response};
+use std::{
+    fs::{copy, write},
+    path::PathBuf,
+};
 use webp::Encoder;
+
+use crate::http::{response_error, response_file};
 
 pub fn save_image_to_webp(image: image::DynamicImage, path: &PathBuf) -> Result<(), String> {
     let encoder = match Encoder::from_image(&image) {
@@ -12,4 +18,28 @@ pub fn save_image_to_webp(image: image::DynamicImage, path: &PathBuf) -> Result<
 
     write(&path, &*webp_memory).ok();
     Ok(())
+}
+
+pub async fn save_resized_image(
+    image: image::DynamicImage,
+    width: Option<u32>,
+    original_path: &PathBuf,
+    target_path: &PathBuf,
+) -> Response {
+    if image.width() <= width.unwrap() {
+        copy(&original_path, &target_path).ok();
+        return response_file(&target_path).await;
+    }
+
+    let resize_height = width.unwrap() * image.height() / image.width();
+    let resized_image = image.thumbnail(width.unwrap(), resize_height);
+
+    match resized_image.save(target_path.clone()) {
+        Ok(_) => {
+            return response_file(&target_path).await;
+        }
+        Err(_) => {
+            return response_error(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    }
 }
