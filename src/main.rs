@@ -1,6 +1,7 @@
 mod env;
 mod fetch;
 mod http;
+mod img;
 mod log;
 mod path;
 
@@ -67,6 +68,7 @@ async fn handle_image_request(
     }
 
     let resize_width = path::get_resize_width_from_path(&path);
+    let convert_to_webp = path.ends_with(".webp");
     let original_path = path::get_original_path(&path, resize_width.is_some());
     let original_file_path = PathBuf::from(format!("{}/images/{}", CDN_ROOT, original_path));
 
@@ -78,7 +80,7 @@ async fn handle_image_request(
         }
     }
 
-    if resize_width.is_none() {
+    if resize_width.is_none() && !convert_to_webp {
         return http::response_file(&file_path).await;
     }
 
@@ -92,6 +94,52 @@ async fn handle_image_request(
                 .into_response();
         }
     };
+
+    if convert_to_webp {
+        let original_path_with_webp = format!("{}.webp", original_path);
+        let original_file_path_with_webp =
+            PathBuf::from(format!("{}/images/{}", CDN_ROOT, original_path_with_webp));
+
+        if let Err(_) = img::save_image_to_webp(image.clone(), &original_file_path_with_webp) {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                http::get_headers_without_cache(),
+            )
+                .into_response();
+        }
+
+        let image_webp = match image::open(&original_file_path_with_webp) {
+            Ok(image) => image,
+            Err(_) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    http::get_headers_without_cache(),
+                )
+                    .into_response();
+            }
+        };
+
+        if image_webp.width() <= resize_width.unwrap() {
+            fs::copy(&original_file_path_with_webp, &file_path).ok();
+            return http::response_file(&file_path).await;
+        }
+
+        let resize_height = resize_width.unwrap() * image_webp.height() / image_webp.width();
+        let resized_image_webp = image_webp.thumbnail(resize_width.unwrap(), resize_height);
+
+        match resized_image_webp.save(file_path.clone()) {
+            Ok(_) => {
+                return http::response_file(&file_path).await;
+            }
+            Err(_) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    http::get_headers_without_cache(),
+                )
+                    .into_response();
+            }
+        }
+    }
 
     if image.width() <= resize_width.unwrap() {
         fs::copy(&original_file_path, &file_path).ok();
