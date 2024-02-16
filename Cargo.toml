@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 axum = { version = "0.7.4", features = ["multipart"] }
 env_logger = "0.11.1"
-image = "0.24.8"
+image = { version = "0.24.8", features = ["webp"] }
 log = "0.4.20"
 mime_guess = "2.0.4"
 reqwest = { version = "0.11.24", features = ["json"] }
@@ -18,3 +18,4 @@ tower-http = { version = "0.5.1", features = ["trace"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 url = "2.5.0"
+webp = "0.2.6"
