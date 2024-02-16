@@ -16,6 +16,8 @@ use tokio;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{error, info, Level};
 
+const CDN_ROOT: &str = "cdn_root";
+
 #[derive(Clone)]
 pub struct AppState {
     host: String,
@@ -39,7 +41,7 @@ async fn handle_files_request(
     State(state): State<AppState>,
     Path(path): Path<String>,
 ) -> impl IntoResponse {
-    let file_path = PathBuf::from(format!("cdn_root/files/{}", path));
+    let file_path = PathBuf::from(format!("{}/files/{}", CDN_ROOT, path));
 
     if file_path.exists() {
         error!("File exists but respond with Rust: {:?}", file_path);
@@ -57,7 +59,7 @@ async fn handle_image_request(
     State(state): State<AppState>,
     Path(path): Path<String>,
 ) -> impl IntoResponse {
-    let file_path = PathBuf::from(format!("cdn_root/images/{}", path));
+    let file_path = PathBuf::from(format!("{}/images/{}", CDN_ROOT, path));
 
     if file_path.exists() {
         error!("File exists but respond with Rust: {:?}", file_path);
@@ -66,7 +68,7 @@ async fn handle_image_request(
 
     let resize_width = path::get_resize_width_from_path(&path);
     let original_path = path::get_original_path(&path, resize_width.is_some());
-    let original_file_path = PathBuf::from(format!("cdn_root/images/{}", original_path));
+    let original_file_path = PathBuf::from(format!("{}/images/{}", CDN_ROOT, original_path));
 
     if !original_file_path.exists() {
         if let Err(_) =
