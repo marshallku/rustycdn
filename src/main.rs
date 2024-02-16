@@ -1,11 +1,12 @@
 mod env;
 mod fetch;
 mod http;
+mod log;
 mod path;
 
 use axum::{
     body::Body,
-    extract::{Path, Request, State},
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::get,
@@ -15,7 +16,7 @@ use std::{fs, path::PathBuf};
 use tokio;
 use tokio_util::io::ReaderStream;
 use tower_http::trace::{self, TraceLayer};
-use tracing::{error, info, Level, Span};
+use tracing::{error, info, Level};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -118,35 +119,6 @@ async fn handle_image_request(
     }
 }
 
-fn trace_layer_on_request(request: &Request<Body>, _span: &Span) {
-    let user_agent = request
-        .headers()
-        .get("user-agent")
-        .map_or("<no user-agent>", |h| {
-            h.to_str().unwrap_or("<invalid utf8>")
-        });
-
-    let referer = request
-        .headers()
-        .get("referer")
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or("<no referer>");
-
-    let ip_address = request
-        .headers()
-        .get("x-forwarded-for")
-        .or_else(|| request.headers().get("x-real-ip"))
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or("<no ip>");
-
-    tracing::info!(
-        "User-Agent: {:?} Referrer: {:?} IP: {:?}",
-        user_agent,
-        referer,
-        ip_address
-    )
-}
-
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
@@ -163,7 +135,7 @@ async fn main() {
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO))
-                .on_request(trace_layer_on_request),
+                .on_request(log::trace_layer_on_request),
         )
         .with_state(state);
 
