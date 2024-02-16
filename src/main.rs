@@ -1,4 +1,5 @@
 mod env;
+mod fetch;
 mod http;
 mod path;
 
@@ -10,7 +11,6 @@ use axum::{
     routing::get,
     Router,
 };
-use reqwest::Client;
 use std::{fs, path::PathBuf};
 use tokio;
 use tokio_util::io::ReaderStream;
@@ -36,28 +36,6 @@ impl AppState {
     }
 }
 
-async fn fetch_and_cache(
-    host: String,
-    file_path: &PathBuf,
-    path: &str,
-) -> Result<(), reqwest::Error> {
-    let url = format!("{}{}", host, path);
-    let response = match Client::new().get(&url).send().await?.error_for_status() {
-        Ok(response) => response.bytes().await?,
-        Err(err) => {
-            error!("Failed to fetch {}", url);
-            return Err(err);
-        }
-    };
-
-    if let Some(parent) = file_path.parent() {
-        fs::create_dir_all(parent).ok();
-    }
-
-    fs::write(file_path, &response).ok();
-    Ok(())
-}
-
 async fn handle_files_request(
     State(state): State<AppState>,
     Path(path): Path<String>,
@@ -65,7 +43,7 @@ async fn handle_files_request(
     let file_path = PathBuf::from(format!("cdn_root/files/{}", path));
 
     if !file_path.exists() {
-        if let Err(_) = fetch_and_cache(state.host, &file_path, &path).await {
+        if let Err(_) = fetch::fetch_and_cache(state.host, &file_path, &path).await {
             return (StatusCode::NOT_FOUND, http::get_headers_without_cache()).into_response();
         }
     }
@@ -96,7 +74,9 @@ async fn handle_image_request(
     let original_file_path = PathBuf::from(format!("cdn_root/images/{}", original_path));
 
     if !original_file_path.exists() {
-        if let Err(_) = fetch_and_cache(state.host, &original_file_path, &original_path).await {
+        if let Err(_) =
+            fetch::fetch_and_cache(state.host, &original_file_path, &original_path).await
+        {
             return (StatusCode::NOT_FOUND, http::get_headers_without_cache()).into_response();
         }
     }
