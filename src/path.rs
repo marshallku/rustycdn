@@ -9,16 +9,22 @@ pub fn get_resize_width_from_path(path: &str) -> Option<u32> {
 }
 
 pub fn get_original_path(path: &str, has_resize: bool) -> String {
-    let extension = path.split('.').last().unwrap_or("");
-    let original_path = if has_resize {
-        path.split('.').collect::<Vec<&str>>()[..path.split('.').count() - 2].join(".")
-            + "."
-            + extension
-    } else {
-        path.to_string()
+    let (dir, filename) = match path.rfind('/') {
+        Some(index) => (&path[..=index], &path[index + 1..]),
+        None => ("", path),
     };
 
-    original_path
+    let mut parts: Vec<&str> = filename.split('.').collect();
+
+    if parts.last() == Some(&"webp") {
+        parts.pop();
+    }
+
+    if has_resize {
+        parts.remove(parts.len() - 2);
+    }
+
+    format!("{}{}", dir, parts.join("."))
 }
 
 #[cfg(test)]
@@ -58,16 +64,22 @@ mod tests {
     fn test_get_original_path() {
         let paths = vec![
             "/path/to/file.w100.jpg",
+            "/path/to/webp.w100.jpg.webp",
             "/path/to/file.with.dot.w100.jpg",
+            "/path/to/webp.with.dot.w100.jpg.webp",
             "/path/to/file.jpg",
             "/path/to/file.with.dot.jpg",
+            "/path/to/webp.with.dot.jpg.webp",
         ];
 
         let expected = vec![
             "/path/to/file.jpg",
+            "/path/to/webp.jpg",
             "/path/to/file.with.dot.jpg",
+            "/path/to/webp.with.dot.jpg",
             "/path/to/file.jpg",
             "/path/to/file.with.dot.jpg",
+            "/path/to/webp.with.dot.jpg",
         ];
 
         for (i, path) in paths.iter().enumerate() {
