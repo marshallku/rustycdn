@@ -1,8 +1,11 @@
 pub fn get_resize_width_from_path(path: &str) -> Option<u32> {
-    path.split('.')
-        .rfind(|s| s.starts_with("w"))
-        .and_then(|s| s.strip_prefix("w"))
-        .and_then(|s| s.parse::<u32>().ok())
+    path.split('.').find_map(|part| {
+        if part.starts_with('w') && part[1..].chars().all(char::is_numeric) {
+            part[1..].parse::<u32>().ok()
+        } else {
+            None
+        }
+    })
 }
 
 pub fn get_original_path(path: &str, has_resize: bool) -> String {
