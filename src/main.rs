@@ -41,10 +41,13 @@ async fn handle_files_request(
 ) -> impl IntoResponse {
     let file_path = PathBuf::from(format!("cdn_root/files/{}", path));
 
-    if !file_path.exists() {
-        if let Err(_) = fetch::fetch_and_cache(state.host, &file_path, &path).await {
-            return (StatusCode::NOT_FOUND, http::get_headers_without_cache()).into_response();
-        }
+    if file_path.exists() {
+        error!("File exists but respond with Rust: {:?}", file_path);
+        return http::response_file(&file_path).await;
+    }
+
+    if let Err(_) = fetch::fetch_and_cache(state.host, &file_path, &path).await {
+        return (StatusCode::NOT_FOUND, http::get_headers_without_cache()).into_response();
     }
 
     http::response_file(&file_path).await
