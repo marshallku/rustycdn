@@ -5,7 +5,6 @@ mod log;
 mod path;
 
 use axum::{
-    body::Body,
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
@@ -14,7 +13,6 @@ use axum::{
 };
 use std::{fs, path::PathBuf};
 use tokio;
-use tokio_util::io::ReaderStream;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{error, info, Level};
 
@@ -49,14 +47,7 @@ async fn handle_files_request(
         }
     }
 
-    let file = match tokio::fs::File::open(file_path).await {
-        Ok(file) => file,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    let stream = ReaderStream::new(file);
-    let body = Body::from_stream(stream);
-
-    (http::get_headers_with_cache(), body).into_response()
+    http::response_file(&file_path).await
 }
 
 async fn handle_image_request(
