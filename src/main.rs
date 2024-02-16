@@ -50,7 +50,7 @@ async fn handle_files_request(
     }
 
     if let Err(_) = fetch::fetch_and_cache(state.host, &file_path, &path).await {
-        return (StatusCode::NOT_FOUND, http::get_headers_without_cache()).into_response();
+        return http::response_error(StatusCode::NOT_FOUND);
     }
 
     http::response_file(&file_path).await
@@ -76,7 +76,7 @@ async fn handle_image_request(
         if let Err(_) =
             fetch::fetch_and_cache(state.host, &original_file_path, &original_path).await
         {
-            return (StatusCode::NOT_FOUND, http::get_headers_without_cache()).into_response();
+            return http::response_error(StatusCode::NOT_FOUND);
         }
     }
 
@@ -87,11 +87,7 @@ async fn handle_image_request(
     let image = match image::open(&original_file_path) {
         Ok(image) => image,
         Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                http::get_headers_without_cache(),
-            )
-                .into_response();
+            return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
 
@@ -101,21 +97,13 @@ async fn handle_image_request(
             PathBuf::from(format!("{}/images/{}", CDN_ROOT, original_path_with_webp));
 
         if let Err(_) = img::save_image_to_webp(image.clone(), &original_file_path_with_webp) {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                http::get_headers_without_cache(),
-            )
-                .into_response();
+            return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
         }
 
         let image_webp = match image::open(&original_file_path_with_webp) {
             Ok(image) => image,
             Err(_) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    http::get_headers_without_cache(),
-                )
-                    .into_response();
+                return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
             }
         };
 
@@ -132,11 +120,7 @@ async fn handle_image_request(
                 return http::response_file(&file_path).await;
             }
             Err(_) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    http::get_headers_without_cache(),
-                )
-                    .into_response();
+                return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
             }
         }
     }
@@ -154,11 +138,7 @@ async fn handle_image_request(
             return http::response_file(&file_path).await;
         }
         Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                http::get_headers_without_cache(),
-            )
-                .into_response();
+            return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
         }
     }
 }

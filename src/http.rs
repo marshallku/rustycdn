@@ -22,15 +22,15 @@ pub fn get_headers_with_cache() -> HeaderMap {
     headers
 }
 
+pub fn response_error(status_code: StatusCode) -> Response {
+    (status_code, get_headers_without_cache()).into_response()
+}
+
 pub async fn response_file(file_path: &PathBuf) -> Response {
     let file = match tokio::fs::File::open(file_path).await {
         Ok(file) => file,
         Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                get_headers_without_cache(),
-            )
-                .into_response();
+            return response_error(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
     let stream = ReaderStream::new(file);
