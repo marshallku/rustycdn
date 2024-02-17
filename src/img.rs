@@ -26,6 +26,10 @@ pub async fn save_resized_image(
     original_path: &PathBuf,
     target_path: &PathBuf,
 ) -> Response {
+    if width.is_none() {
+        return response_file(&target_path).await;
+    }
+
     if image.width() <= width.unwrap() {
         copy(&original_path, &target_path).ok();
         return response_file(&target_path).await;
