@@ -91,32 +91,25 @@ async fn handle_image_request(
         }
     };
 
-    if convert_to_webp {
-        let original_path_with_webp = format!("{}.webp", original_path);
-        let original_file_path_with_webp =
-            PathBuf::from(format!("{}/images/{}", CDN_ROOT, original_path_with_webp));
-
-        if let Err(_) = img::save_image_to_webp(image.clone(), &original_file_path_with_webp) {
-            return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-
-        let image_webp = match image::open(&original_file_path_with_webp) {
-            Ok(image) => image,
-            Err(_) => {
-                return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        };
-
-        return img::save_resized_image(
-            image_webp,
-            resize_width,
-            &original_file_path_with_webp,
-            &file_path,
-        )
-        .await;
+    if !convert_to_webp {
+        return img::save_resized_image(image, resize_width, &original_file_path, &file_path).await;
     }
 
-    img::save_resized_image(image, resize_width, &original_file_path, &file_path).await
+    let path_with_webp = format!("{}.webp", original_path);
+    let file_path_with_webp = PathBuf::from(format!("{}/images/{}", CDN_ROOT, path_with_webp));
+
+    if let Err(_) = img::save_image_to_webp(image.clone(), &file_path_with_webp) {
+        return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    let image_webp = match image::open(&file_path_with_webp) {
+        Ok(image) => image,
+        Err(_) => {
+            return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    img::save_resized_image(image_webp, resize_width, &file_path_with_webp, &file_path).await
 }
 
 #[tokio::main]
