@@ -98,7 +98,7 @@ async fn handle_image_request(
     let path_with_webp = format!("{}.webp", original_path);
     let file_path_with_webp = PathBuf::from(format!("{}/images/{}", CDN_ROOT, path_with_webp));
 
-    if let Err(_) = img::save_image_to_webp(image.clone(), &file_path_with_webp) {
+    if let Err(_) = img::save_image_to_webp(&image, &file_path_with_webp) {
         return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
     }
 
