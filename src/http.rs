@@ -6,12 +6,14 @@ use axum::{
 use std::path::PathBuf;
 use tokio_util::io::ReaderStream;
 
+const YEAR_TO_SECONDS: u32 = 31536000;
+
 pub fn get_cache_header(age: u32) -> HeaderMap {
     let mut headers = HeaderMap::new();
     let cache_age = if age <= 0 {
-        "no-cache"
+        "no-cache".to_string()
     } else {
-        "public, max-age=31536000"
+        format!("public, max-age={}", age)
     };
 
     headers.insert("Cache-Control", cache_age.parse().unwrap());
@@ -33,5 +35,5 @@ pub async fn response_file(file_path: &PathBuf) -> Response {
     let stream = ReaderStream::new(file);
     let body = Body::from_stream(stream);
 
-    (get_cache_header(31536000), body).into_response()
+    (get_cache_header(YEAR_TO_SECONDS), body).into_response()
 }
