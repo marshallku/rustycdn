@@ -39,11 +39,7 @@ pub async fn save_resized_image(
     let resized_image = image.thumbnail(width.unwrap(), resize_height);
 
     match resized_image.save(target_path.clone()) {
-        Ok(_) => {
-            return response_file(&target_path).await;
-        }
-        Err(_) => {
-            return response_error(StatusCode::INTERNAL_SERVER_ERROR);
-        }
+        Ok(_) => response_file(&target_path).await,
+        Err(_) => response_error(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
