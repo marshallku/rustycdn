@@ -63,29 +63,28 @@ mod tests {
     #[test]
     fn test_get_original_path() {
         let paths = vec![
-            "/path/to/file.w100.jpg",
-            "/path/to/webp.w100.jpg.webp",
-            "/path/to/file.with.dot.w100.jpg",
-            "/path/to/webp.with.dot.w100.jpg.webp",
-            "/path/to/file.jpg",
-            "/path/to/file.with.dot.jpg",
-            "/path/to/webp.with.dot.jpg.webp",
+            ["/path/to/file.w100.jpg", "/path/to/file.jpg"],
+            ["/path/to/webp.w100.jpg.webp", "/path/to/webp.jpg"],
+            [
+                "/path/to/file.with.dot.w100.jpg",
+                "/path/to/file.with.dot.jpg",
+            ],
+            [
+                "/path/to/webp.with.dot.w100.jpg.webp",
+                "/path/to/webp.with.dot.jpg",
+            ],
+            ["/path/to/file.jpg", "/path/to/file.jpg"],
+            ["/path/to/file.with.dot.jpg", "/path/to/file.with.dot.jpg"],
+            [
+                "/path/to/webp.with.dot.jpg.webp",
+                "/path/to/webp.with.dot.jpg",
+            ],
         ];
 
-        let expected = vec![
-            "/path/to/file.jpg",
-            "/path/to/webp.jpg",
-            "/path/to/file.with.dot.jpg",
-            "/path/to/webp.with.dot.jpg",
-            "/path/to/file.jpg",
-            "/path/to/file.with.dot.jpg",
-            "/path/to/webp.with.dot.jpg",
-        ];
-
-        for (i, path) in paths.iter().enumerate() {
+        for (_, path) in paths.iter().enumerate() {
             assert_eq!(
-                get_original_path(path, get_resize_width_from_path(path).is_some()),
-                expected[i]
+                get_original_path(path[0], get_resize_width_from_path(path[0]).is_some()),
+                path[1]
             );
         }
     }
