@@ -6,16 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.7.4", features = ["multipart"] }
-env_logger = "0.11.1"
-image = { version = "0.24.8", features = ["webp"] }
-log = "0.4.20"
+axum = { version = "0.7.5", features = ["multipart"] }
+env_logger = "0.11.3"
+image = { version = "0.25.1", features = ["webp"] }
+log = "0.4.21"
 mime_guess = "2.0.4"
-reqwest = { version = "0.11.24", features = ["json"] }
-tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread", "fs"] }
+reqwest = { version = "0.12.3", features = ["json"] }
+tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread", "fs"] }
 tokio-util = { version = "0.7.10", features = ["io"] }
-tower-http = { version = "0.5.1", features = ["trace"] }
+tower-http = { version = "0.5.2", features = ["trace"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 url = "2.5.0"
-webp = "0.2.6"
+webp = "0.2.7"
