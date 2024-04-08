@@ -9,10 +9,12 @@
         "codepoint",
         "codepoints",
         "hookform",
+        "iname",
         "libressl",
         "localforage",
         "Malgun",
         "marshallku",
+        "mindepth",
         "nextjs",
         "pkgconfig",
         "preconfigured",
@@ -26,7 +28,14 @@
         "tsup",
         "Turborepo",
         "vercel",
+        "WEBM",
+        "WEBP",
         "xlink"
     ],
-    "ignorePaths": ["Cargo.lock", "Cargo.toml", "target", "config/nginx.conf"]
+    "ignorePaths": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "target",
+        "config/nginx.conf"
+    ]
 }

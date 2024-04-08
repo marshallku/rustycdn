@@ -35,3 +35,23 @@ After starting the server, it will listen for requests on the configured address
 ## Production Deployment with Nginx
 
 For optimal performance and reliability in a production environment, it is recommended to deploy the Rust server behind Nginx. This setup enhances security, load balancing, and static asset serving capabilities. An example Nginx configuration tailored for use with this server can be found in `config/nginx.conf`. Refer to this example to configure Nginx as a reverse proxy for your Rust CDN server.
+
+## Removing files with cronjob
+
+Automate the cleanup of unused files in your CDN's root directory by setting up cron jobs. These commands will search for and delete files based on their age and type, ensuring your directory remains clutter-free.
+
+### Setup
+
+Paste the following lines into your crontab file to schedule the cleanup tasks. These commands are executed daily at 4:00 AM.
+
+- The first job removes CSS and JavaScript files that haven't been accessed in over 5 days
+
+    ```shell
+    00 4 * * * /usr/bin/find /home/ubuntu/cdn/cdn_root -mindepth 2 -atime +5 -type f \( -o -iname \*.css -o -iname \*.js \) | xargs rm 1>/dev/null 2>/dev/null
+    ```
+
+- The second job targets image and video files (PNG, JPG, JPEG, GIF, WEBP, MP4, WEBM, SVG) as well as CSS and JavaScript files that haven't been accessed in over a year (365 days):
+
+    ```shell
+    00 4 * * * /usr/bin/find /home/ubuntu/cdn/cdn_root -mindepth 2 -atime +365 -type f \( -iname \*.png -o -iname \*.jpg -o -iname \*.jpeg -o -iname \*.gif -o -iname \*.webp -o -iname \*.mp4 -o -iname \*.webm -o -iname \*.svg -o -iname \*.css -o -iname \*.js \) | xargs rm 1>/dev/null 2>/dev/null
+    ```
