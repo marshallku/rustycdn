@@ -1,5 +1,3 @@
-version: "3"
-
 services:
     cdn:
         container_name: cdn
