@@ -6,7 +6,7 @@ services:
         volumes:
             - ./cdn_root:/usr/local/bin/cdn_root
         ports:
-            - 4200:41890
+            - ${NODE_PORT}:41890
         networks:
             - app_network
         environment:
