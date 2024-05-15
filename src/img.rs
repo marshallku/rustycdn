@@ -43,3 +43,54 @@ pub async fn save_resized_image(
         Err(_) => response_error(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::path;
+
+    use super::*;
+    use image::io::Reader as ImageReader;
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[tokio::test]
+    async fn test_save_resized_image() {
+        const TARGET_WIDTH: u32 = 100;
+        const IMAGE_PATH: &str = "src/tests/fixtures";
+        const IMAGE_NAME: &str = "image";
+        const IMAGE_EXT: &str = "jpg";
+
+        let dir = tempdir().unwrap();
+
+        let image_path = format!("{}.{}", IMAGE_NAME, IMAGE_EXT);
+        let path = format!("{}.w{}.{}", IMAGE_NAME, TARGET_WIDTH, IMAGE_EXT);
+
+        let file_path = dir.path().join(path.clone());
+        let original_path = path::get_original_path(&path, true);
+        let original_file_path = dir.path().join(format!("image{}", original_path.clone()));
+
+        match fs::copy(
+            format!("{}/{}", IMAGE_PATH, image_path.clone()),
+            file_path.clone(),
+        ) {
+            Ok(_) => {}
+            Err(_) => {
+                panic!("Failed to copy image file");
+            }
+        };
+
+        let image = ImageReader::open(file_path.clone())
+            .unwrap()
+            .decode()
+            .unwrap();
+
+        let response =
+            save_resized_image(image, Some(TARGET_WIDTH), &original_file_path, &file_path).await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let resized_image = ImageReader::open(file_path).unwrap().decode().unwrap();
+
+        assert_eq!(resized_image.width(), TARGET_WIDTH);
+    }
+}
