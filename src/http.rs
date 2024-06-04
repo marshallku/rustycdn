@@ -63,6 +63,33 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_response_file_with_empty_file() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("empty.txt");
+        File::create(&file_path).unwrap();
+
+        let response = response_file(&file_path).await;
+        let body = response.collect().await.unwrap().to_bytes();
+
+        assert_eq!(body, "".as_bytes());
+    }
+
+    #[tokio::test]
+    async fn test_response_file_with_large_file() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("large.txt");
+        let mut file = File::create(&file_path).unwrap();
+
+        let large_content = vec![b'a'; 10_000];
+        file.write_all(&large_content).unwrap();
+
+        let response = response_file(&file_path).await;
+        let body = response.collect().await.unwrap().to_bytes();
+
+        assert_eq!(body, large_content.as_slice(),);
+    }
+
+    #[tokio::test]
     async fn test_response_file_with_error() {
         let file_path = PathBuf::from("non-existing-file.txt");
         let response = response_file(&file_path).await;
