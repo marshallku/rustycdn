@@ -203,4 +203,85 @@ mod tests {
             "Resized image width does not match target width"
         );
     }
+
+    #[tokio::test]
+    async fn test_save_resized_image_without_width() {
+        let dir = tempdir().unwrap();
+
+        let image_path = format!("{}.{}", IMAGE_NAME, IMAGE_EXT);
+        let file_path = dir.path().join(image_path.clone());
+
+        match fs::copy(format!("{}/{}", IMAGE_PATH, image_path), &file_path) {
+            Ok(_) => {}
+            Err(_) => {
+                panic!("Failed to copy image file");
+            }
+        };
+
+        let image = ImageReader::open(&file_path).unwrap().decode().unwrap();
+
+        let response = save_resized_image(image, None, &file_path, &file_path).await;
+
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Expected OK status for image response without width, but got {}",
+            response.status()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_save_resized_image_with_larger_width() {
+        const ORIGINAL_WIDTH: u32 = 460;
+        const TARGET_WIDTH: u32 = 600;
+
+        let dir = tempdir().unwrap();
+
+        let image_path = format!("{}.{}", IMAGE_NAME, IMAGE_EXT);
+        let path = format!("{}.w{}.{}", IMAGE_NAME, TARGET_WIDTH, IMAGE_EXT);
+
+        let file_path = dir.path().join(path.clone());
+        let original_path = path::get_original_path(&path, true);
+        let original_file_path = dir.path().join(format!("image{}", original_path.clone()));
+
+        match fs::copy(
+            format!("{}/{}", IMAGE_PATH, image_path.clone()),
+            file_path.clone(),
+        ) {
+            Ok(_) => {}
+            Err(_) => {
+                panic!("Failed to copy image file");
+            }
+        };
+
+        let image = ImageReader::open(file_path.clone())
+            .unwrap()
+            .decode()
+            .unwrap();
+
+        let response =
+            save_resized_image(image, Some(TARGET_WIDTH), &original_file_path, &file_path).await;
+
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Expected OK status for resized image response, but got {}",
+            response.status()
+        );
+
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Expected OK status for image response with larger target width, but got {}",
+            response.status()
+        );
+
+        let resized_image = ImageReader::open(&file_path).unwrap().decode().unwrap();
+
+        assert_eq!(
+            resized_image.width(),
+            ORIGINAL_WIDTH,
+            "Image width should not change when target width is larger than original"
+        );
+    }
 }
