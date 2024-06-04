@@ -17,11 +17,9 @@ pub fn save_image_to_webp(image: &image::DynamicImage, path: &PathBuf) -> Result
     let webp_memory = encoder.encode(100f32);
 
     match write(&path, &*webp_memory) {
-        Ok(i) => i,
-        Err(e) => return Err(e.to_string()),
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.to_string()),
     }
-
-    Ok(())
 }
 
 pub async fn save_resized_image(
@@ -50,9 +48,8 @@ pub async fn save_resized_image(
 
 #[cfg(test)]
 mod tests {
-    use crate::path;
-
     use super::*;
+    use crate::path;
     use image::{io::Reader as ImageReader, DynamicImage, RgbImage};
     use std::{
         fs::{self, read, set_permissions},
@@ -81,13 +78,24 @@ mod tests {
             }
         };
 
-        assert!(output_path.exists());
+        assert!(
+            output_path.exists(),
+            "Output file does not exist after saving image as WebP"
+        );
 
         let webp_data = read(&output_path).unwrap();
         let decoded_webp = Decoder::new(&webp_data).decode().unwrap();
 
-        assert_eq!(decoded_webp.width(), IMAGE_SIZE);
-        assert_eq!(decoded_webp.width(), decoded_webp.height());
+        assert_eq!(
+            decoded_webp.width(),
+            IMAGE_SIZE,
+            "Decoded WebP width does not match original image width"
+        );
+        assert_eq!(
+            decoded_webp.height(),
+            IMAGE_SIZE,
+            "Decoded WebP height does not match original image height"
+        );
     }
 
     #[tokio::test]
@@ -103,7 +111,10 @@ mod tests {
             }
         };
 
-        assert!(output_path.exists());
+        assert!(
+            output_path.exists(),
+            "Output file does not exist after saving large image as WebP"
+        );
     }
 
     #[tokio::test]
@@ -116,8 +127,14 @@ mod tests {
 
         let result = save_image_to_webp(&image, &output_path);
 
-        assert!(result.is_err());
-        assert!(!output_path.exists());
+        assert!(
+            result.is_err(),
+            "Expected error when saving to a read-only file system, but got success"
+        );
+        assert!(
+            !output_path.exists(),
+            "Output file should not exist after attempting to save to a read-only file system"
+        );
     }
 
     #[tokio::test]
@@ -133,7 +150,10 @@ mod tests {
 
         for invalid_image in invalid_cases.iter() {
             let result = save_image_to_webp(&invalid_image, &output_path);
-            assert!(result.is_err());
+            assert!(
+                result.is_err(),
+                "Expected error for invalid image dimensions, but got success"
+            );
         }
     }
 
@@ -168,10 +188,19 @@ mod tests {
         let response =
             save_resized_image(image, Some(TARGET_WIDTH), &original_file_path, &file_path).await;
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Expected OK status for resized image response, but got {}",
+            response.status()
+        );
 
         let resized_image = ImageReader::open(file_path).unwrap().decode().unwrap();
 
-        assert_eq!(resized_image.width(), TARGET_WIDTH);
+        assert_eq!(
+            resized_image.width(),
+            TARGET_WIDTH,
+            "Resized image width does not match target width"
+        );
     }
 }

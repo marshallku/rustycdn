@@ -59,7 +59,11 @@ mod tests {
         let response = response_file(&file_path).await;
         let body = response.collect().await.unwrap().to_bytes();
 
-        assert_eq!(body, "test".as_bytes());
+        assert_eq!(
+            body,
+            "test".as_bytes(),
+            "File content does not match expected content"
+        );
     }
 
     #[tokio::test]
@@ -71,7 +75,11 @@ mod tests {
         let response = response_file(&file_path).await;
         let body = response.collect().await.unwrap().to_bytes();
 
-        assert_eq!(body, "".as_bytes());
+        assert_eq!(
+            body,
+            "".as_bytes(),
+            "Response body is not empty for empty file"
+        );
     }
 
     #[tokio::test]
@@ -86,7 +94,11 @@ mod tests {
         let response = response_file(&file_path).await;
         let body = response.collect().await.unwrap().to_bytes();
 
-        assert_eq!(body, large_content.as_slice(),);
+        assert_eq!(
+            body,
+            large_content.as_slice(),
+            "Response body does not match large file content"
+        );
     }
 
     #[tokio::test]
@@ -94,20 +106,33 @@ mod tests {
         let file_path = PathBuf::from("non-existing-file.txt");
         let response = response_file(&file_path).await;
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Expected internal server error for non-existing file"
+        );
     }
 
     #[test]
     fn test_get_cache_header() {
-        let headers = get_cache_header(0);
-        let cache_control = headers.get("Cache-Control").unwrap().to_str().unwrap();
-
-        assert_eq!(cache_control, "no-cache");
-
         let headers = get_cache_header(100);
         let cache_control = headers.get("Cache-Control").unwrap().to_str().unwrap();
 
-        assert_eq!(cache_control, "public, max-age=100");
+        assert_eq!(
+            cache_control, "public, max-age=100",
+            "Cache-Control header does not match with positive cache age"
+        );
+    }
+
+    #[test]
+    fn test_get_cache_header_with_falsy_age() {
+        let headers = get_cache_header(0);
+        let cache_control = headers.get("Cache-Control").unwrap().to_str().unwrap();
+
+        assert_eq!(
+            cache_control, "no-cache",
+            "Cache-Control header does not match 'no-cache' for age 0"
+        );
     }
 
     #[test]
@@ -115,7 +140,11 @@ mod tests {
         let response = response_error(StatusCode::NOT_FOUND);
         let status = response.status();
 
-        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert_eq!(
+            status,
+            StatusCode::NOT_FOUND,
+            "Status code does not match NOT_FOUND"
+        );
     }
 
     #[test]
@@ -124,6 +153,9 @@ mod tests {
         let headers = response.headers();
         let cache_control = headers.get("Cache-Control").unwrap().to_str().unwrap();
 
-        assert_eq!(cache_control, "no-cache");
+        assert_eq!(
+            cache_control, "no-cache",
+            "Cache-Control header does not match 'no-cache' in error response"
+        );
     }
 }
