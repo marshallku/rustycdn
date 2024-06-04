@@ -16,7 +16,11 @@ pub fn save_image_to_webp(image: &image::DynamicImage, path: &PathBuf) -> Result
     };
     let webp_memory = encoder.encode(100f32);
 
-    write(&path, &*webp_memory).ok();
+    match write(&path, &*webp_memory) {
+        Ok(i) => i,
+        Err(e) => return Err(e.to_string()),
+    }
+
     Ok(())
 }
 
