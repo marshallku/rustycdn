@@ -49,8 +49,11 @@ mod tests {
     use crate::path;
 
     use super::*;
-    use image::{io::Reader as ImageReader, DynamicImage};
-    use std::fs::{self, read};
+    use image::{io::Reader as ImageReader, DynamicImage, RgbImage};
+    use std::{
+        fs::{self, read, set_permissions},
+        os::unix::fs::PermissionsExt,
+    };
     use tempfile::tempdir;
     use webp::Decoder;
 
@@ -84,15 +87,50 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_save_image_to_webp_invalid_image() {
+    async fn test_save_image_to_webp_large_image() {
+        let image = DynamicImage::ImageRgb8(RgbImage::new(10000, 10000));
+        let dir = tempdir().unwrap();
+        let output_path = dir.path().join("large_image.webp");
+
+        match save_image_to_webp(&image, &output_path) {
+            Ok(_) => {}
+            Err(e) => {
+                panic!("Failed to save large image as WebP: {}", e);
+            }
+        };
+
+        assert!(output_path.exists());
+    }
+
+    #[tokio::test]
+    async fn test_save_image_to_webp_read_only_file_system() {
+        let image = DynamicImage::ImageRgb8(RgbImage::new(100, 100));
+        let dir = tempdir().unwrap();
+        let output_path = dir.path().join("read_only_image.webp");
+
+        set_permissions(dir.path(), std::fs::Permissions::from_mode(0o444)).unwrap();
+
+        let result = save_image_to_webp(&image, &output_path);
+
+        assert!(result.is_err());
+        assert!(!output_path.exists());
+    }
+
+    #[tokio::test]
+    async fn test_save_image_to_webp_invalid_dimension() {
         let dir = tempdir().unwrap();
         let output_path = dir.path().join("test_image.webp");
 
-        let invalid_image = DynamicImage::ImageLuma8(image::GrayImage::new(0, 0));
+        let invalid_cases = [
+            DynamicImage::ImageLuma8(image::GrayImage::new(0, 0)),
+            DynamicImage::ImageLuma8(image::GrayImage::new(0, 100)),
+            DynamicImage::ImageLuma8(image::GrayImage::new(100, 0)),
+        ];
 
-        let result = save_image_to_webp(&invalid_image, &output_path);
-
-        assert!(result.is_err());
+        for invalid_image in invalid_cases.iter() {
+            let result = save_image_to_webp(&invalid_image, &output_path);
+            assert!(result.is_err());
+        }
     }
 
     #[tokio::test]
