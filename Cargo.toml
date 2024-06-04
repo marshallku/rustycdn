@@ -12,12 +12,12 @@ http-body-util = "0.1.1"
 image = { version = "0.25.1", features = ["webp"] }
 log = "0.4.21"
 mime_guess = "2.0.4"
-reqwest = { version = "0.12.3", features = ["json"] }
+reqwest = { version = "0.12.4", features = ["json"] }
 tempfile = "3.10.1"
-tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread", "fs"] }
-tokio-util = { version = "0.7.10", features = ["io"] }
+tokio = { version = "1.38.0", features = ["macros", "rt-multi-thread", "fs"] }
+tokio-util = { version = "0.7.11", features = ["io"] }
 tower-http = { version = "0.5.2", features = ["trace"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 url = "2.5.0"
-webp = "0.2.7"
+webp = "0.3.0"
