@@ -49,16 +49,55 @@ mod tests {
     use crate::path;
 
     use super::*;
-    use image::io::Reader as ImageReader;
-    use std::fs;
+    use image::{io::Reader as ImageReader, DynamicImage};
+    use std::fs::{self, read};
     use tempfile::tempdir;
+    use webp::Decoder;
+
+    const IMAGE_PATH: &str = "src/tests/fixtures";
+    const IMAGE_NAME: &str = "image";
+    const IMAGE_EXT: &str = "jpg";
+
+    #[tokio::test]
+    async fn test_save_image_to_webp() {
+        const IMAGE_SIZE: u32 = 100;
+
+        let dir = tempdir().unwrap();
+        let output_path = dir.path().join("test_image.webp");
+
+        let image = DynamicImage::ImageRgb8(image::RgbImage::new(IMAGE_SIZE, IMAGE_SIZE));
+
+        match save_image_to_webp(&image, &output_path) {
+            Ok(_) => {}
+            Err(e) => {
+                panic!("Failed to save image as WebP: {}", e);
+            }
+        };
+
+        assert!(output_path.exists());
+
+        let webp_data = read(&output_path).unwrap();
+        let decoded_webp = Decoder::new(&webp_data).decode().unwrap();
+
+        assert_eq!(decoded_webp.width(), IMAGE_SIZE);
+        assert_eq!(decoded_webp.width(), decoded_webp.height());
+    }
+
+    #[tokio::test]
+    async fn test_save_image_to_webp_invalid_image() {
+        let dir = tempdir().unwrap();
+        let output_path = dir.path().join("test_image.webp");
+
+        let invalid_image = DynamicImage::ImageLuma8(image::GrayImage::new(0, 0));
+
+        let result = save_image_to_webp(&invalid_image, &output_path);
+
+        assert!(result.is_err());
+    }
 
     #[tokio::test]
     async fn test_save_resized_image() {
         const TARGET_WIDTH: u32 = 100;
-        const IMAGE_PATH: &str = "src/tests/fixtures";
-        const IMAGE_NAME: &str = "image";
-        const IMAGE_EXT: &str = "jpg";
 
         let dir = tempdir().unwrap();
 
