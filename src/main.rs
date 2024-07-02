@@ -1,3 +1,4 @@
+mod constants;
 mod env;
 mod utils;
 
@@ -7,6 +8,7 @@ use axum::{
     routing::get,
     Router,
 };
+use constants::CDN_ROOT;
 use env::state::AppState;
 use reqwest::StatusCode;
 use std::path::PathBuf;
@@ -20,8 +22,6 @@ use utils::{
     log::trace_layer_on_request,
     path::{get_original_path, get_resize_width_from_path},
 };
-
-const CDN_ROOT: &str = "cdn_root";
 
 async fn handle_files_request(
     State(state): State<AppState>,
