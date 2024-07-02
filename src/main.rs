@@ -1,21 +1,24 @@
 mod env;
-mod fetch;
-mod http;
-mod img;
-mod log;
-mod path;
+mod utils;
 
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
     response::IntoResponse,
     routing::get,
     Router,
 };
+use reqwest::StatusCode;
 use std::path::PathBuf;
 use tokio;
-use tower_http::trace::{self, TraceLayer};
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::{error, info, Level};
+use utils::{
+    fetch::fetch_and_cache,
+    http::{response_error, response_file},
+    img::{save_image_to_webp, save_resized_image},
+    log::trace_layer_on_request,
+    path::{get_original_path, get_resize_width_from_path},
+};
 
 const CDN_ROOT: &str = "cdn_root";
 
@@ -46,14 +49,14 @@ async fn handle_files_request(
 
     if file_path.exists() {
         error!("File exists but respond with Rust: {:?}", file_path);
-        return http::response_file(&file_path).await;
+        return response_file(&file_path).await;
     }
 
-    if let Err(_) = fetch::fetch_and_cache(state.host, &file_path, &path).await {
-        return http::response_error(StatusCode::NOT_FOUND);
+    if let Err(_) = fetch_and_cache(state.host, &file_path, &path).await {
+        return response_error(StatusCode::NOT_FOUND);
     }
 
-    http::response_file(&file_path).await
+    response_file(&file_path).await
 }
 
 async fn handle_image_request(
@@ -64,52 +67,50 @@ async fn handle_image_request(
 
     if file_path.exists() {
         error!("File exists but respond with Rust: {:?}", file_path);
-        return http::response_file(&file_path).await;
+        return response_file(&file_path).await;
     }
 
-    let resize_width = path::get_resize_width_from_path(&path);
+    let resize_width = get_resize_width_from_path(&path);
     let convert_to_webp = path.ends_with(".webp");
-    let original_path = path::get_original_path(&path, resize_width.is_some());
+    let original_path = get_original_path(&path, resize_width.is_some());
     let original_file_path = PathBuf::from(format!("{}/images/{}", CDN_ROOT, original_path));
 
     if !original_file_path.exists() {
-        if let Err(_) =
-            fetch::fetch_and_cache(state.host, &original_file_path, &original_path).await
-        {
-            return http::response_error(StatusCode::NOT_FOUND);
+        if let Err(_) = fetch_and_cache(state.host, &original_file_path, &original_path).await {
+            return response_error(StatusCode::NOT_FOUND);
         }
     }
 
     if resize_width.is_none() && !convert_to_webp {
-        return http::response_file(&file_path).await;
+        return response_file(&file_path).await;
     }
 
     let image = match image::open(&original_file_path) {
         Ok(image) => image,
         Err(_) => {
-            return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
+            return response_error(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
 
     if !convert_to_webp {
-        return img::save_resized_image(image, resize_width, &original_file_path, &file_path).await;
+        return save_resized_image(image, resize_width, &original_file_path, &file_path).await;
     }
 
     let path_with_webp = format!("{}.webp", original_path);
     let file_path_with_webp = PathBuf::from(format!("{}/images/{}", CDN_ROOT, path_with_webp));
 
-    if let Err(_) = img::save_image_to_webp(&image, &file_path_with_webp) {
-        return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
+    if let Err(_) = save_image_to_webp(&image, &file_path_with_webp) {
+        return response_error(StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     let image_webp = match image::open(&file_path_with_webp) {
         Ok(image) => image,
         Err(_) => {
-            return http::response_error(StatusCode::INTERNAL_SERVER_ERROR);
+            return response_error(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
 
-    img::save_resized_image(image_webp, resize_width, &file_path_with_webp, &file_path).await
+    save_resized_image(image_webp, resize_width, &file_path_with_webp, &file_path).await
 }
 
 #[tokio::main]
@@ -126,9 +127,9 @@ async fn main() {
         .route("/images/*path", get(handle_image_request))
         .layer(
             TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                .on_response(trace::DefaultOnResponse::new().level(Level::INFO))
-                .on_request(log::trace_layer_on_request),
+                .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(DefaultOnResponse::new().level(Level::INFO))
+                .on_request(trace_layer_on_request),
         )
         .with_state(state);
 

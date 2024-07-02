@@ -5,7 +5,7 @@ use std::{
 };
 use webp::Encoder;
 
-use crate::http::{response_error, response_file};
+use super::http::{response_error, response_file};
 
 pub fn save_image_to_webp(image: &image::DynamicImage, path: &PathBuf) -> Result<(), String> {
     let encoder = match Encoder::from_image(&image) {
@@ -48,8 +48,9 @@ pub async fn save_resized_image(
 
 #[cfg(test)]
 mod tests {
+    use crate::utils::path;
+
     use super::*;
-    use crate::path;
     use image::{io::Reader as ImageReader, DynamicImage, RgbImage};
     use std::{
         fs::{self, read, set_permissions},
