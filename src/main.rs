@@ -7,6 +7,7 @@ use axum::{
     routing::get,
     Router,
 };
+use env::state::AppState;
 use reqwest::StatusCode;
 use std::path::PathBuf;
 use tokio;
@@ -21,25 +22,6 @@ use utils::{
 };
 
 const CDN_ROOT: &str = "cdn_root";
-
-#[derive(Clone)]
-pub struct AppState {
-    host: String,
-    port: u16,
-    address: String,
-}
-
-impl AppState {
-    pub fn from_env() -> Self {
-        let env = env::Env::new();
-
-        Self {
-            host: env.host.into_owned(),
-            port: env.port,
-            address: env.address.into_owned(),
-        }
-    }
-}
 
 async fn handle_files_request(
     State(state): State<AppState>,
