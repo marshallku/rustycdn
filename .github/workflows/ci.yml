@@ -12,7 +12,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - uses: marshallku/actions/check-spelling@master
+            - uses: marshallku/actions/analyze/spell@master
     build:
         name: Build project
         runs-on: ubuntu-latest
