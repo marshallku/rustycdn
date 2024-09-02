@@ -1,10 +1,10 @@
 mod constants;
+mod controllers;
 mod env;
-mod routes;
 mod utils;
 
+use controllers::app::app;
 use env::state::AppState;
-use routes::app::app;
 use tokio;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::{info, Level};
