@@ -1,3 +1,5 @@
+use dotenv::dotenv;
+
 use super::env::Env;
 
 #[derive(Clone)]
@@ -9,6 +11,8 @@ pub struct AppState {
 
 impl AppState {
     pub fn from_env() -> Self {
+        dotenv().ok();
+
         let env = Env::new();
 
         Self {

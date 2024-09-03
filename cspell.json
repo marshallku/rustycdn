@@ -8,6 +8,7 @@
     "codebases",
     "codepoint",
     "codepoints",
+    "dotenv",
     "hookform",
     "iname",
     "libressl",
