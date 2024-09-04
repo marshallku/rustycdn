@@ -48,7 +48,7 @@ pub async fn process_image_request(
         return Ok(save_resized_image(image, resize_width, &original_file_path, &file_path).await);
     }
 
-    let path_with_webp = format!("{}.webp", path);
+    let path_with_webp = format!("{}.webp", original_path);
     let file_path_with_webp = PathBuf::from(format!("{}/images/{}", CDN_ROOT, path_with_webp));
 
     save_image_to_webp(&image, &file_path_with_webp)
