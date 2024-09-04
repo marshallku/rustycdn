@@ -3,3 +3,6 @@
 
 /cdn_root
 .env
+
+clippy-report.json
+lcov.info

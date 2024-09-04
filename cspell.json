@@ -8,6 +8,7 @@
     "codebases",
     "codepoint",
     "codepoints",
+    "clippy",
     "dotenv",
     "hookform",
     "iname",
@@ -39,10 +40,5 @@
     "WEBP",
     "xlink"
   ],
-  "ignorePaths": [
-    "Cargo.lock",
-    "Cargo.toml",
-    "target",
-    "config/nginx.conf"
-  ]
+  "ignorePaths": ["Cargo.lock", "Cargo.toml", "target", "config/nginx.conf"]
 }
