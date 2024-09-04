@@ -1,10 +1,15 @@
 name: CI
 
 on:
-    - push
+    push:
+    pull_request:
+        branches:
+            - master
 
 env:
     CI: true
+    REGISTRY: ghcr.io
+    IMAGE_NAME: ${{ github.repository }}
 
 jobs:
     check-spelling:
@@ -53,8 +58,67 @@ jobs:
               env:
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
                   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    docker:
+        name: Build and push Docker image
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check version
+              id: check
+              if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+              uses: marshallku/actions/version/check-cargo@master
+            - name: Create tag and release
+              id: create-tag-release
+              if: ${{ steps.check.outputs.version != '' }}
+              uses: marshallku/actions/version/generate@master
+              with:
+                  tag: v${{ steps.check.outputs.version }}
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+            - name: Setup cache
+              uses: actions/cache@v4
+              with:
+                  path: /tmp/.buildx-cache
+                  key: ${{ runner.os }}-buildx-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-buildx-
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+            - name: Log in to the Container registry
+              uses: docker/login-action@v3
+              if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Docker meta
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  tags: |
+                      type=ref,event=branch
+                      type=ref,event=pr
+                      type=semver,pattern={{version}}
+            - name: Add default tags
+              run: echo "TAGS=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly" >> $GITHUB_ENV
+            - name: Overwrite version tags
+              if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.create-tag-release.outputs.tag-exists == 'false' }}
+              run: echo "TAGS=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ steps.check.outputs.version }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_ENV
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+                  tags: ${{ env.TAGS }}
+                  labels: ${{ steps.meta.outputs.labels }}
+                  cache-from: type=local,src=/tmp/.buildx-cache
+                  cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+            - name: Move cache
+              run: |
+                  rm -rf /tmp/.buildx-cache
+                  mv /tmp/.buildx-cache-new /tmp/.buildx-cache
     send-notification:
-        needs: [check-spelling, build, test, sonarqube]
+        needs: [check-spelling, build, test, docker, sonarqube]
         if: ${{ failure() }}
         uses: marshallku/actions/.github/workflows/send-notification.yml@master
         with:
