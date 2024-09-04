@@ -6,19 +6,16 @@ mod tests {
     use axum::{
         body::Body,
         http::{Request, StatusCode},
-        routing::get,
-        Router,
     };
     use tower::ServiceExt;
 
-    use crate::{constants::CDN_ROOT, controllers::images, env::state::AppState};
+    use crate::{constants::CDN_ROOT, controllers::app::app, env::state::AppState};
 
     const URI: &str = "/images";
 
     #[tokio::test]
     async fn test_response_file() {
-        let app: Router<AppState> =
-            Router::new().route(&format!("{}/*path", URI), get(images::get));
+        let app = app();
         let state = AppState::from_env();
         let file_path = "/images/hpp/ic_wahlberg_product_core_48.png8.png";
         let response = app
