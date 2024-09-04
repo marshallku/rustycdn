@@ -33,4 +33,25 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         assert!(local_file_path.exists());
     }
+
+    #[tokio::test]
+    async fn test_response_error() {
+        let app = app();
+        let state = AppState::from_env();
+        let file_path = "/images/you-must-not-exist.png";
+        let response = app
+            .with_state(state)
+            .oneshot(
+                Request::builder()
+                    .uri(format!("{}{}", URI, file_path))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let local_file_path = PathBuf::from(format!("{}{}{}", CDN_ROOT, URI, file_path));
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert!(!local_file_path.exists());
+    }
 }
