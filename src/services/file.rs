@@ -17,7 +17,7 @@ pub async fn process_file_request(state: &AppState, path: &str) -> Result<Respon
         return Ok(response_file(&file_path).await);
     }
 
-    if fetch_and_cache(state.host.clone(), &file_path, &path)
+    if fetch_and_cache(state.host.clone(), &file_path, path)
         .await
         .is_err()
     {
