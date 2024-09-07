@@ -8,7 +8,7 @@ use webp::Encoder;
 use super::http::{response_error, response_file};
 
 pub fn save_image_to_webp(image: &image::DynamicImage, path: &PathBuf) -> Result<(), String> {
-    let encoder = match Encoder::from_image(&image) {
+    let encoder = match Encoder::from_image(image) {
         Ok(e) => e,
         Err(e) => {
             return Err(e.to_string());
