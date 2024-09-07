@@ -31,8 +31,9 @@ pub async fn process_image_request(
     let original_file_path = PathBuf::from(format!("{}/images/{}", CDN_ROOT, original_path));
 
     if !original_file_path.exists() {
-        if let Err(_) =
-            fetch_and_cache(state.host.clone(), &original_file_path, &original_path).await
+        if fetch_and_cache(state.host.clone(), &original_file_path, &original_path)
+            .await
+            .is_err()
         {
             return Err(StatusCode::NOT_FOUND);
         }
