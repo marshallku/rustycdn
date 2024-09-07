@@ -19,7 +19,7 @@ async fn main() {
         .init();
 
     let state = AppState::from_env();
-    let addr = format!("{}:{}", state.address.to_string(), state.port.to_string());
+    let addr = format!("{}:{}", state.address, state.port);
     let app = app()
         .layer(
             TraceLayer::new_for_http()
