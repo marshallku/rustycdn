@@ -6,7 +6,7 @@ mod utils;
 
 use controllers::app::app;
 use env::state::AppState;
-use tokio;
+use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::{info, Level};
 use utils::log::trace_layer_on_request;
@@ -29,7 +29,7 @@ async fn main() {
         )
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind(addr.as_str()).await.unwrap();
+    let listener = TcpListener::bind(addr.as_str()).await.unwrap();
 
     info!("Server running at http://{}", addr);
 
