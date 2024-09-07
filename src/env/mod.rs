@@ -1,2 +1,2 @@
-pub mod env;
+pub mod app;
 pub mod state;
