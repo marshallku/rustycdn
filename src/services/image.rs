@@ -22,7 +22,7 @@ pub async fn process_image_request(
 ) -> Result<Response, StatusCode> {
     if file_path.exists() {
         error!("File exists but respond with Rust: {:?}", file_path);
-        return Ok(response_file(&file_path).await);
+        return Ok(response_file(file_path).await);
     }
 
     let resize_width = get_resize_width_from_path(path);
@@ -39,13 +39,13 @@ pub async fn process_image_request(
     }
 
     if resize_width.is_none() && !convert_to_webp {
-        return Ok(response_file(&file_path).await);
+        return Ok(response_file(file_path).await);
     }
 
     let image = open_image(&original_file_path)?;
 
     if !convert_to_webp {
-        return Ok(save_resized_image(image, resize_width, &original_file_path, &file_path).await);
+        return Ok(save_resized_image(image, resize_width, &original_file_path, file_path).await);
     }
 
     let path_with_webp = format!("{}.webp", original_path);
