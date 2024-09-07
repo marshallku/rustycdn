@@ -30,13 +30,12 @@ pub async fn process_image_request(
     let original_path = get_original_path(path, resize_width.is_some());
     let original_file_path = PathBuf::from(format!("{}/images/{}", CDN_ROOT, original_path));
 
-    if !original_file_path.exists() {
-        if fetch_and_cache(state.host.clone(), &original_file_path, &original_path)
+    if !original_file_path.exists()
+        && fetch_and_cache(state.host.clone(), &original_file_path, &original_path)
             .await
             .is_err()
-        {
-            return Err(StatusCode::NOT_FOUND);
-        }
+    {
+        return Err(StatusCode::NOT_FOUND);
     }
 
     if resize_width.is_none() && !convert_to_webp {
