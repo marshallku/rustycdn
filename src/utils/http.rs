@@ -10,7 +10,7 @@ const YEAR_TO_SECONDS: u32 = 31536000;
 
 pub fn get_cache_header(age: u32) -> HeaderMap {
     let mut headers = HeaderMap::new();
-    let cache_age = if age <= 0 {
+    let cache_age = if age == 0 {
         "no-cache".to_string()
     } else {
         format!("public, max-age={}", age)
