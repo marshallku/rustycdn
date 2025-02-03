@@ -1,6 +1,6 @@
-# RustyCDN
+# Rusty Files
 
-[![CI](https://github.com/marshallku/rustycdn/actions/workflows/ci.yml/badge.svg)](https://github.com/marshallku/rustycdn/actions/workflows/ci.yml)
+[![CI](https://github.com/marshallku/rustyfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/marshallku/rustyfiles/actions/workflows/ci.yml)
 
 <!-- ![Quality Gate Status](https://badge.marshallku.dev?metric=alert_status&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
 ![Bugs](https://badge.marshallku.dev?metric=bugs&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)

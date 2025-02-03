@@ -29,7 +29,6 @@
         "referer",
         "reqwest",
         "rfind",
-        "rustycdn",
         "rustyfiles",
         "tempdir",
         "tempfile",
