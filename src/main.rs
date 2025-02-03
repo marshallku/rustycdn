@@ -8,7 +8,7 @@ use controllers::app::app;
 use env::state::AppState;
 use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use tracing::{info, Level};
+use tracing::{error, info, Level};
 use utils::log::trace_layer_on_request;
 
 #[tokio::main]
@@ -32,6 +32,7 @@ async fn main() {
     let listener = TcpListener::bind(addr.as_str()).await.unwrap();
 
     info!("Server running at http://{}", addr);
+    error!("This package is deprecated, please use `ghcr.io/marshallku/rustyfiles:latest`: https://github.com/marshallku/rustyfiles");
 
     axum::serve(listener, app.into_make_service())
         .await
