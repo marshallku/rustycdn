@@ -2,14 +2,14 @@
 
 [![CI](https://github.com/marshallku/rustycdn/actions/workflows/ci.yml/badge.svg)](https://github.com/marshallku/rustycdn/actions/workflows/ci.yml)
 
-![Quality Gate Status](https://badge.marshallku.dev?metric=alert_status&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
+<!-- ![Quality Gate Status](https://badge.marshallku.dev?metric=alert_status&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
 ![Bugs](https://badge.marshallku.dev?metric=bugs&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
 ![Code Smells](https://badge.marshallku.dev?metric=code_smells&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
 ![Maintainability Rating](https://badge.marshallku.dev?metric=sqale_rating&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
 ![Reliability Rating](https://badge.marshallku.dev?metric=reliability_rating&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
 ![Security Rating](https://badge.marshallku.dev?metric=security_rating&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
 ![Vulnerabilities](https://badge.marshallku.dev?metric=vulnerabilities&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
-![Coverage](https://badge.marshallku.dev?metric=coverage&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c)
+![Coverage](https://badge.marshallku.dev?metric=coverage&project=marshallku_marshallku-blog-cdn_7201a95a-ba17-439f-ac2d-60f1c9624f4c) -->
 
 This project is a custom CDN(Content Delivery Network) server built with Rust, designed to efficiently serve static files and images for my personal blog.
 
