@@ -5,7 +5,7 @@ mod tests {
         path,
     };
 
-    use image::{io::Reader as ImageReader, DynamicImage, RgbImage};
+    use image::{DynamicImage, ImageReader, RgbImage};
     use reqwest::StatusCode;
     use std::{
         fs::{self, read, set_permissions},

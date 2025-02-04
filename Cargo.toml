@@ -6,20 +6,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.7.5", features = ["multipart"] }
+axum = { version = "0.7.9", features = ["multipart"] }
 dotenv = "0.15.0"
-env_logger = "0.11.3"
-http-body-util = "0.1.1"
-image = { version = "0.25.1", features = ["webp"] }
-log = "0.4.21"
-mime_guess = "2.0.4"
-reqwest = { version = "0.12.4", features = ["json"] }
-tempfile = "3.10.1"
-tokio = { version = "1.38.0", features = ["macros", "rt-multi-thread", "fs"] }
-tokio-util = { version = "0.7.11", features = ["io"] }
-tower = "0.4.13"
+env_logger = "0.11.6"
+http-body-util = "0.1.2"
+image = { version = "0.25.5", features = ["webp"] }
+log = "0.4.25"
+mime_guess = "2.0.5"
+reqwest = { version = "0.12.12", features = ["json"] }
+tempfile = "3.16.0"
+tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread", "fs"] }
+tokio-util = { version = "0.7.13", features = ["io"] }
+tower = { version = "0.4.13", features = ["util"] }
 tower-http = { version = "0.5.2", features = ["trace"] }
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-url = "2.5.0"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+url = "2.5.4"
 webp = "0.3.0"
